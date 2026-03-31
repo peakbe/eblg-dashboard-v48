@@ -81,17 +81,15 @@ function updateStatusPanel(service, data) {
 // ======================================================
 
 const RUNWAYS = {
-    "04": {
-        start: [50.645900, 5.443300],
-        end:   [50.637300, 5.463500],
-        color: "blue",
-        heading: 70
-    },
     "22": {
-        start: [50.637300, 5.463500],
-        end:   [50.645900, 5.443300],
-        color: "red",
-        heading: 250
+        heading: 220,
+        start: [50.64695, 5.44340],   // seuil 22
+        end:   [50.63740, 5.46010]    // seuil 04
+    },
+    "04": {
+        heading: 40,
+        start: [50.63740, 5.46010],   // seuil 04
+        end:   [50.64695, 5.44340]    // seuil 22
     }
 };
 
