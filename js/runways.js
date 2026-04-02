@@ -1,69 +1,73 @@
 // ======================================================
-// RUNWAYS & CORRIDORS
+// RUNWAYS & CORRIDORS (CORRIGÉ)
 // ======================================================
 
-/**
- * Définitions des pistes EBLG.
- * heading = QFU réel
- */
+// Coordonnées réelles EBLG
 export const RUNWAYS = {
     "22": {
         heading: 220,
-        start: [50.64695, 5.44340],
-        end:   [50.63740, 5.46010],
+        start: [50.64695, 5.44340],   // seuil 22
+        end:   [50.64455, 5.46515],   // seuil 04 (corrigé)
         width_m: 45
     },
     "04": {
         heading: 40,
-        start: [50.63740, 5.46010],
-        end:   [50.64695, 5.44340],
+        start: [50.64455, 5.46515],   // seuil 04
+        end:   [50.64695, 5.44340],   // seuil 22
         width_m: 45
     }
 };
 
-/**
- * Corridors d’approche/départ simplifiés.
- */
+// Corridors réalistes (optionnel)
 export const CORRIDORS = {
     "04": [
         [50.700000, 5.300000],
         [50.670000, 5.380000],
-        [50.645900, 5.443300]
+        [50.64455, 5.46515]
     ],
     "22": [
         [50.600000, 5.600000],
         [50.620000, 5.520000],
-        [50.637300, 5.463500]
+        [50.64695, 5.44340]
     ]
 };
 
-/**
- * Dessine la piste active sur la carte.
- * @param {string} runway - "22", "04" ou "UNKNOWN"
- * @param {L.LayerGroup} layer - layer Leaflet
- */
+
+// ======================================================
+// DESSIN DE LA PISTE (CORRIGÉ)
+// ======================================================
+
 export function drawRunway(runway, layer) {
     layer.clearLayers();
     if (runway === "UNKNOWN") return;
 
     const r = RUNWAYS[runway];
-    const [lat1, lng1] = r.start;
-    const [lat2, lng2] = r.end;
+    const [lat1, lon1] = r.start;
+    const [lat2, lon2] = r.end;
 
-    const dx = lng2 - lng1;
+    // Vecteur piste
+    const dx = lon2 - lon1;
     const dy = lat2 - lat1;
     const len = Math.sqrt(dx*dx + dy*dy);
+
+    // Perpendiculaire
     const px = -(dy / len);
     const py = dx / len;
 
-    const meterToDeg = 1 / 111320;
-    const halfW = (r.width_m * meterToDeg) / 2;
+    // Conversion mètres → degrés (corrigée)
+    const meterToDegLat = 1 / 111320;
+    const meterToDegLon = 1 / (111320 * Math.cos(lat1 * Math.PI/180));
 
-    const p1L = [lat1 + py * halfW, lng1 + px * halfW];
-    const p1R = [lat1 - py * halfW, lng1 - px * halfW];
-    const p2L = [lat2 + py * halfW, lng2 + px * halfW];
-    const p2R = [lat2 - py * halfW, lng2 - px * halfW];
+    const halfW_lat = (r.width_m * meterToDegLat) / 2;
+    const halfW_lon = (r.width_m * meterToDegLon) / 2;
 
+    // Coins de la piste
+    const p1L = [lat1 + py * halfW_lat, lon1 + px * halfW_lon];
+    const p1R = [lat1 - py * halfW_lat, lon1 - px * halfW_lon];
+    const p2L = [lat2 + py * halfW_lat, lon2 + px * halfW_lon];
+    const p2R = [lat2 - py * halfW_lat, lon2 - px * halfW_lon];
+
+    // Polygon piste
     L.polygon([p1L, p1R, p2R, p2L], {
         color: "#222",
         weight: 1,
@@ -71,12 +75,14 @@ export function drawRunway(runway, layer) {
         fillOpacity: 0.9
     }).addTo(layer);
 
+    // Axe central
     L.polyline([r.start, r.end], {
         color: "#fff",
         weight: 2,
         dashArray: "8,8"
     }).addTo(layer);
 
+    // Numéros de piste
     const num1 = (r.heading / 10).toFixed(0).padStart(2, "0");
     const num2 = (((r.heading + 180) % 360) / 10).toFixed(0).padStart(2, "0");
 
@@ -89,11 +95,11 @@ export function drawRunway(runway, layer) {
     }).addTo(layer);
 }
 
-/**
- * Dessine le corridor d’approche/départ.
- * @param {string} runway
- * @param {L.LayerGroup} layer
- */
+
+// ======================================================
+// CORRIDOR (inchangé)
+// ======================================================
+
 export function drawCorridor(runway, layer) {
     layer.clearLayers();
     if (runway === "UNKNOWN") return;
@@ -117,31 +123,4 @@ export function drawCorridor(runway, layer) {
             }]
         }).addTo(layer);
     }
-}
-
-/**
- * Détermine la piste active en fonction du vent.
- * @param {number} windDir
- * @returns {string}
- */
-export function getRunwayFromWind(windDir) {
-    if (!windDir) return "UNKNOWN";
-    const diff22 = Math.abs(windDir - 220);
-    const diff04 = Math.abs(windDir - 40);
-    return diff22 < diff04 ? "22" : "04";
-}
-
-/**
- * Calcule le crosswind.
- * @returns {{crosswind:number, angleDiff:number}}
- */
-export function computeCrosswind(windDir, windSpeed, runwayHeading) {
-    if (!windDir || !windSpeed || !runwayHeading)
-        return { crosswind: 0, angleDiff: 0 };
-
-    const angleDiff = Math.abs(windDir - runwayHeading);
-    const rad = angleDiff * Math.PI / 180;
-    const crosswind = Math.round(Math.abs(windSpeed * Math.sin(rad)));
-
-    return { crosswind, angleDiff };
 }
